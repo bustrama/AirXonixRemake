@@ -11,16 +11,24 @@ public class PlayerControls :MonoBehaviour {
 
     private GameObject arena;
     private float maxDistance;
+    private TrailRenderer trailRenderer;
 
     // Start is called before the first frame update
     void Start() {
         arena = GameObject.Find("arena");
         maxDistance = 5 * arena.transform.localScale.x - 1;
         transform.position = new Vector3(0, 2, -maxDistance);
+
+        trailRenderer = gameObject.GetComponent<TrailRenderer>();
     }
 
     // Update is called once per frame
     void Update() {
+        PlayerMovement();
+        PlayerTrail();
+    }
+
+    void PlayerMovement() {
         // get the user's vertical input
         verticalInput = Input.GetAxis("Vertical");
         horizontalInput = Input.GetAxis("Horizontal");
@@ -57,12 +65,25 @@ public class PlayerControls :MonoBehaviour {
         }
     }
 
+    void PlayerTrail() {
+        if (onGround) {
+            // Clear the trail renderer if the player is grounded
+            trailRenderer.Clear();
+        }
+    }
+
     private void OnTriggerEnter(Collider other) {
         if (other.gameObject.CompareTag("Enemy")) {
             Debug.Log("Game Over");
             gameOver = true;
         }
 
+        if (other.gameObject.CompareTag("Ground")) {
+            onGround = true;
+        }
+    }
+
+    private void OnTriggerStay(Collider other) {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
         }
