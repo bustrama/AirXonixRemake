@@ -131,7 +131,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 8
-  xAxis: 0
+  xAxis: 1
   zAxis: 1
 --- !u!54 &3011769259823836873
 Rigidbody:

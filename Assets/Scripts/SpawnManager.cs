@@ -1,22 +1,37 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class SpawnManager :MonoBehaviour {
-    private int waveIndex = 0;
-    public int enemyCount;
-
-    public GameObject arena;
     public int[] waves;
     public GameObject[] enemies;
 
+    private GameObject arena;
+    private int waveIndex = 0;
+    private int enemyCount;
     private float spawnRange;
+    private bool initialized = false;
 
     // Start is called before the first frame update
     void Start() {
+        StartCoroutine(WaitForArena());
+    }
+
+    IEnumerator WaitForArena() {
+        // Wait until the end of the frame
+        yield return new WaitForEndOfFrame();
+
+        arena = GameObject.Find("arena");
+
+        // Wait until the game object has been created
+        while (arena == null) {
+            yield return null;
+        }
+
+        // The game object has been created, do something with it
         BoxCollider arenaBox = arena.GetComponent<BoxCollider>();
         spawnRange = arenaBox.size.z * 2;
         SpawnEnemyWave(waves[waveIndex]);
+        initialized = true;
     }
 
     void SpawnEnemyWave(int numOfEnemies) {
@@ -39,14 +54,16 @@ public class SpawnManager :MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        enemyCount = FindObjectsOfType<Enemy>().Length;
-        if (enemyCount == 0) {
-            if (waveIndex + 1 >= waves.Length) {
-                Debug.Log("Game Over");
-            } else {
-                waveIndex++;
-                // Instantiate(powerupPrefab, GenerateSpawnPosition(), powerupPrefab.transform.rotation);
-                SpawnEnemyWave(waves[waveIndex]);
+        if (initialized) {
+            enemyCount = FindObjectsOfType<Enemy>().Length;
+            if (enemyCount == 0) {
+                if (waveIndex + 1 >= waves.Length) {
+                    Debug.Log("Game Over");
+                } else {
+                    waveIndex++;
+                    // Instantiate(powerupPrefab, GenerateSpawnPosition(), powerupPrefab.transform.rotation);
+                    SpawnEnemyWave(waves[waveIndex]);
+                }
             }
         }
     }
