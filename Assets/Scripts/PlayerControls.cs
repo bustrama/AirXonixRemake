@@ -2,14 +2,13 @@ using UnityEngine;
 
 public class PlayerControls :MonoBehaviour {
     [SerializeField] private float moveSpeed = 20.0f;
-
-    [SerializeField] private bool onGround = false;
     [SerializeField] private float horizontalInput;
     [SerializeField] private float verticalInput;
+    [SerializeField] private bool onGround = false;
     [SerializeField] private bool gameOver = false;
-    private Vector3 lastDirection;
 
     private GameObject arena;
+    private Vector3 lastDirection;
     private float maxDistance;
     private TrailRenderer trailRenderer;
 
@@ -33,16 +32,15 @@ public class PlayerControls :MonoBehaviour {
         verticalInput = Input.GetAxis("Vertical");
         horizontalInput = Input.GetAxis("Horizontal");
 
-
         if (onGround) {
             transform.Translate(Vector3.up * moveSpeed * Time.deltaTime * -verticalInput);
             transform.Translate(Vector3.right * moveSpeed * Time.deltaTime * horizontalInput);
         } else {
-            if (Mathf.Abs(verticalInput) > Mathf.Abs(horizontalInput)) {
+            if (lastDirection != Vector3.up && lastDirection != Vector3.down && Mathf.Abs(verticalInput) > Mathf.Abs(horizontalInput)) {
                 float direction = verticalInput > 0 ? 1 : -1;
                 transform.Translate(Vector3.up * moveSpeed * Time.deltaTime * -direction);
                 lastDirection = verticalInput < 0 ? Vector3.up : Vector3.down;
-            } else if (Mathf.Abs(horizontalInput) > Mathf.Abs(verticalInput)) {
+            } else if (lastDirection != Vector3.right && lastDirection != Vector3.left && Mathf.Abs(horizontalInput) > Mathf.Abs(verticalInput)) {
                 float direction = horizontalInput > 0 ? 1 : -1;
                 transform.Translate(Vector3.right * moveSpeed * Time.deltaTime * direction);
                 lastDirection = horizontalInput > 0 ? Vector3.right : Vector3.left;
@@ -80,12 +78,14 @@ public class PlayerControls :MonoBehaviour {
 
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
+            lastDirection = Vector3.zero;
         }
     }
 
     private void OnTriggerStay(Collider other) {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
+            lastDirection = Vector3.zero;
         }
     }
 
