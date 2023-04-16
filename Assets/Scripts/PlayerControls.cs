@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerControls :MonoBehaviour {
@@ -7,10 +8,15 @@ public class PlayerControls :MonoBehaviour {
     [SerializeField] private bool onGround = false;
     [SerializeField] private bool gameOver = false;
 
+    [SerializeField] private ParticleSystem explosionPrefab;
+    [SerializeField] private GameObject trailColliderPrefab;
+    private TrailRenderer trailRenderer;
+    private List<GameObject> trailColliders = new List<GameObject>();
+    private Vector3 lastColliderInitialPoint;
+
     private GameObject arena;
     private Vector3 lastDirection;
     private float maxDistance;
-    private TrailRenderer trailRenderer;
 
     // Start is called before the first frame update
     void Start() {
@@ -40,12 +46,21 @@ public class PlayerControls :MonoBehaviour {
                 float direction = verticalInput > 0 ? 1 : -1;
                 transform.Translate(Vector3.up * moveSpeed * Time.deltaTime * -direction);
                 lastDirection = verticalInput < 0 ? Vector3.up : Vector3.down;
+                CreateTrailCollider();
             } else if (lastDirection != Vector3.right && lastDirection != Vector3.left && Mathf.Abs(horizontalInput) > Mathf.Abs(verticalInput)) {
                 float direction = horizontalInput > 0 ? 1 : -1;
                 transform.Translate(Vector3.right * moveSpeed * Time.deltaTime * direction);
                 lastDirection = horizontalInput > 0 ? Vector3.right : Vector3.left;
+                CreateTrailCollider();
             } else {
                 transform.Translate(lastDirection * moveSpeed * Time.deltaTime);
+                if (lastDirection == Vector3.up || lastDirection == Vector3.down) {
+                    trailColliders[trailColliders.Count - 1].transform.position = new Vector3(trailColliders[trailColliders.Count - 1].transform.position.x, trailColliders[trailColliders.Count - 1].transform.position.y, (transform.position.z + lastColliderInitialPoint.z) / 2);
+                    trailColliders[trailColliders.Count - 1].transform.localScale = new Vector3(trailColliders[trailColliders.Count - 1].transform.localScale.x, trailColliders[trailColliders.Count - 1].transform.localScale.y, transform.position.z - lastColliderInitialPoint.z);
+                } else {
+                    trailColliders[trailColliders.Count - 1].transform.position = new Vector3((transform.position.x + lastColliderInitialPoint.x) / 2, trailColliders[trailColliders.Count - 1].transform.position.y, trailColliders[trailColliders.Count - 1].transform.position.z);
+                    trailColliders[trailColliders.Count - 1].transform.localScale = new Vector3(transform.position.x - lastColliderInitialPoint.x, trailColliders[trailColliders.Count - 1].transform.localScale.y, trailColliders[trailColliders.Count - 1].transform.localScale.z);
+                }
             }
         }
 
@@ -70,15 +85,44 @@ public class PlayerControls :MonoBehaviour {
         }
     }
 
+    void CreateTrailCollider() {
+        Debug.Log("Created Trail Collider");
+        GameObject trailCollider = Instantiate(trailColliderPrefab, transform.position, trailColliderPrefab.transform.rotation);
+        lastColliderInitialPoint = new Vector3(transform.position.x, transform.position.y, transform.position.z);
+        trailColliders.Add(trailCollider);
+    }
+
+    void KillTrailColliders() {
+        Debug.Log("Killing Trail Colliders");
+        foreach (var trail in trailColliders) {
+            Destroy(trail.gameObject);
+        }
+        trailColliders = new List<GameObject>();
+    }
+
+    void GameOver() {
+        gameOver = true;
+        explosionPrefab.Play();
+    }
+
     private void OnTriggerEnter(Collider other) {
+        // Enemy collision
         if (other.gameObject.CompareTag("Enemy")) {
-            Debug.Log("Game Over");
-            gameOver = true;
+            Debug.Log("Game Over " + "Collided with: " + other.gameObject.name);
+            GameOver();
         }
 
+        // Player trail collision
+        if (other.gameObject.CompareTag("PlayerTrail") && !other.gameObject.Equals(trailColliders[trailColliders.Count - 1])) {
+            Debug.Log("Game Over " + "Collided with: " + other.gameObject.name);
+            GameOver();
+        }
+
+        // Back to ground
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
             lastDirection = Vector3.zero;
+            KillTrailColliders();
         }
     }
 
@@ -86,12 +130,16 @@ public class PlayerControls :MonoBehaviour {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
             lastDirection = Vector3.zero;
+            if (trailColliders.Count > 0) {
+                KillTrailColliders();
+            }
         }
     }
 
     private void OnTriggerExit(Collider other) {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = false;
+            CreateTrailCollider();
         }
     }
 }

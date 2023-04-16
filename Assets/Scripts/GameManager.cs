@@ -24,9 +24,10 @@ public class GameManager :MonoBehaviour {
 
     void SetupBorders() {
         arenaBorders = new GameObject[4];
-        for (var i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             arenaBorders[i] = GameObject.CreatePrimitive(PrimitiveType.Cube);
             arenaBorders[i].transform.localScale = new Vector3(2, 1, 10 * size);
+            arenaBorders[i].name = "Border " + (i + 1);
 
             // Setup Collider for each border
             BoxCollider boxCollider = arenaBorders[i].GetComponent<BoxCollider>();
