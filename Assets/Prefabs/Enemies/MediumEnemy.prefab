@@ -97,7 +97,7 @@ GameObject:
   - component: {fileID: 3475335066270421157}
   m_Layer: 0
   m_Name: MediumEnemy
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -160,5 +160,5 @@ BoxCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1.8646748, y: 1.5397335, z: 1.8591665}
-  m_Center: {x: 0.0027538538, y: 0.005507529, z: 0.0000004172325}
+  m_Size: {x: 1.8646748, y: 3.0380518, z: 1.8591665}
+  m_Center: {x: 0.0027538538, y: 0.7546667, z: 0.0000004172325}

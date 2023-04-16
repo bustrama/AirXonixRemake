@@ -3,17 +3,18 @@ using UnityEngine;
 
 public class PlayerControls :MonoBehaviour {
     [SerializeField] private float moveSpeed = 20.0f;
-    [SerializeField] private float horizontalInput;
-    [SerializeField] private float verticalInput;
     [SerializeField] private bool onGround = false;
     [SerializeField] private bool gameOver = false;
-
-    [SerializeField] private ParticleSystem explosionPrefab;
     [SerializeField] private GameObject trailColliderPrefab;
+    [SerializeField] private ParticleSystem explosionPrefab;
+
     private TrailRenderer trailRenderer;
     private List<GameObject> trailColliders = new List<GameObject>();
     private Vector3 lastColliderInitialPoint;
 
+    private AudioSource explosionSound;
+    private float horizontalInput;
+    private float verticalInput;
     private GameObject arena;
     private Vector3 lastDirection;
     private float maxDistance;
@@ -25,6 +26,8 @@ public class PlayerControls :MonoBehaviour {
         transform.position = new Vector3(0, 2, -maxDistance);
 
         trailRenderer = gameObject.GetComponent<TrailRenderer>();
+
+        explosionSound = gameObject.GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -55,11 +58,23 @@ public class PlayerControls :MonoBehaviour {
             } else {
                 transform.Translate(lastDirection * moveSpeed * Time.deltaTime);
                 if (lastDirection == Vector3.up || lastDirection == Vector3.down) {
-                    trailColliders[trailColliders.Count - 1].transform.position = new Vector3(trailColliders[trailColliders.Count - 1].transform.position.x, trailColliders[trailColliders.Count - 1].transform.position.y, (transform.position.z + lastColliderInitialPoint.z) / 2);
-                    trailColliders[trailColliders.Count - 1].transform.localScale = new Vector3(trailColliders[trailColliders.Count - 1].transform.localScale.x, trailColliders[trailColliders.Count - 1].transform.localScale.y, transform.position.z - lastColliderInitialPoint.z);
+                    trailColliders[trailColliders.Count - 1].transform.position = new Vector3(
+                        trailColliders[trailColliders.Count - 1].transform.position.x, 
+                        trailColliders[trailColliders.Count - 1].transform.position.y, 
+                        (transform.position.z + lastColliderInitialPoint.z) / 2);
+                    trailColliders[trailColliders.Count - 1].transform.localScale = new Vector3(
+                        trailColliders[trailColliders.Count - 1].transform.localScale.x, 
+                        trailColliders[trailColliders.Count - 1].transform.localScale.y, 
+                        Mathf.Abs(transform.position.z - lastColliderInitialPoint.z));
                 } else {
-                    trailColliders[trailColliders.Count - 1].transform.position = new Vector3((transform.position.x + lastColliderInitialPoint.x) / 2, trailColliders[trailColliders.Count - 1].transform.position.y, trailColliders[trailColliders.Count - 1].transform.position.z);
-                    trailColliders[trailColliders.Count - 1].transform.localScale = new Vector3(transform.position.x - lastColliderInitialPoint.x, trailColliders[trailColliders.Count - 1].transform.localScale.y, trailColliders[trailColliders.Count - 1].transform.localScale.z);
+                    trailColliders[trailColliders.Count - 1].transform.position = new Vector3(
+                        (transform.position.x + lastColliderInitialPoint.x) / 2, 
+                        trailColliders[trailColliders.Count - 1].transform.position.y, 
+                        trailColliders[trailColliders.Count - 1].transform.position.z);
+                    trailColliders[trailColliders.Count - 1].transform.localScale = new Vector3(
+                        Mathf.Abs(transform.position.x - lastColliderInitialPoint.x), 
+                        trailColliders[trailColliders.Count - 1].transform.localScale.y, 
+                        trailColliders[trailColliders.Count - 1].transform.localScale.z);
                 }
             }
         }
@@ -102,6 +117,7 @@ public class PlayerControls :MonoBehaviour {
 
     void GameOver() {
         gameOver = true;
+        explosionSound.Play();
         explosionPrefab.Play();
     }
 
@@ -139,7 +155,7 @@ public class PlayerControls :MonoBehaviour {
     private void OnTriggerExit(Collider other) {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = false;
-            CreateTrailCollider();
+            // CreateTrailCollider();
         }
     }
 }
