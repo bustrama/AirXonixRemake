@@ -3,17 +3,12 @@ using UnityEngine;
 
 public class AreaManager : MonoBehaviour {
     public int gridSize = 20;
-    public GameObject arena;
     public float cellSize;
-    public GameObject groundTilePrefab;
 
     private Dictionary<Vector2Int, GameObject> groundTiles = new Dictionary<Vector2Int, GameObject>();
 
     void Start() {
-        if (arena == null) {
-            arena = GameObject.Find("arena");
-        }
-        float arenaSize = arena != null ? arena.transform.localScale.x : 1f;
+        float arenaSize = transform.localScale.x;
         cellSize = (arenaSize * 10f) / gridSize;
 
         // Create border ground tiles
@@ -27,16 +22,16 @@ public class AreaManager : MonoBehaviour {
     }
 
     public Vector2Int WorldToGrid(Vector3 pos) {
-        float startX = -arena.transform.localScale.x * 5f + cellSize / 2f;
-        float startZ = -arena.transform.localScale.z * 5f + cellSize / 2f;
+        float startX = -transform.localScale.x * 5f + cellSize / 2f;
+        float startZ = -transform.localScale.z * 5f + cellSize / 2f;
         int gx = Mathf.Clamp(Mathf.RoundToInt((pos.x - startX) / cellSize), 0, gridSize - 1);
         int gz = Mathf.Clamp(Mathf.RoundToInt((pos.z - startZ) / cellSize), 0, gridSize - 1);
         return new Vector2Int(gx, gz);
     }
 
     public Vector3 GridToWorld(Vector2Int index) {
-        float startX = -arena.transform.localScale.x * 5f + cellSize / 2f;
-        float startZ = -arena.transform.localScale.z * 5f + cellSize / 2f;
+        float startX = -transform.localScale.x * 5f + cellSize / 2f;
+        float startZ = -transform.localScale.z * 5f + cellSize / 2f;
         return new Vector3(startX + index.x * cellSize, 0.5f, startZ + index.y * cellSize);
     }
 
@@ -63,14 +58,13 @@ public class AreaManager : MonoBehaviour {
         if (groundTiles.ContainsKey(index)) return;
 
         Vector3 worldPos = GridToWorld(index);
-        GameObject tile;
-        if (groundTilePrefab != null) {
-            tile = Instantiate(groundTilePrefab, worldPos, Quaternion.identity, transform);
-        } else {
-            tile = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            tile.transform.position = worldPos;
-            tile.transform.localScale = new Vector3(cellSize, 1f, cellSize);
-        }
+        GameObject tile = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        tile.transform.position = worldPos;
+        tile.transform.localScale = new Vector3(cellSize, 1f, cellSize);
+        BoxCollider boxCollider = tile.GetComponent<BoxCollider>();
+        boxCollider.center = new Vector3(0, 1, 0);
+        boxCollider.size = new Vector3(1, 3, 1);
+        boxCollider.isTrigger = true;
         tile.tag = "Ground";
         groundTiles[index] = tile;
     }

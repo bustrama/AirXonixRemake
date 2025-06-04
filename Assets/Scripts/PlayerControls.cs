@@ -34,6 +34,9 @@ public class PlayerControls :MonoBehaviour {
         if (gameOverUI == null) {
             gameOverUI = FindObjectOfType<GameOverUI>();
         }
+        if (areaManager == null && arena != null) {
+            areaManager = arena.GetComponent<AreaManager>();
+        }
         if (areaManager == null) {
             areaManager = FindObjectOfType<AreaManager>();
         }
