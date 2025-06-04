@@ -7,6 +7,7 @@ public class PlayerControls :MonoBehaviour {
     [SerializeField] private bool gameOver = false;
     [SerializeField] private GameObject trailColliderPrefab;
     [SerializeField] private ParticleSystem explosionPrefab;
+    [SerializeField] private GameOverUI gameOverUI;
 
     private TrailRenderer trailRenderer;
     private List<GameObject> trailColliders = new List<GameObject>();
@@ -28,6 +29,10 @@ public class PlayerControls :MonoBehaviour {
         trailRenderer = gameObject.GetComponent<TrailRenderer>();
 
         explosionSound = gameObject.GetComponent<AudioSource>();
+
+        if (gameOverUI == null) {
+            gameOverUI = FindObjectOfType<GameOverUI>();
+        }
     }
 
     // Update is called once per frame
@@ -119,6 +124,9 @@ public class PlayerControls :MonoBehaviour {
         gameOver = true;
         explosionSound.Play();
         explosionPrefab.Play();
+        if (gameOverUI != null) {
+            gameOverUI.Show();
+        }
     }
 
     private void OnTriggerEnter(Collider other) {
