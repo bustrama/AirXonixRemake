@@ -8,6 +8,7 @@ public class PlayerControls :MonoBehaviour {
     [SerializeField] private GameObject trailColliderPrefab;
     [SerializeField] private ParticleSystem explosionPrefab;
     [SerializeField] private GameOverUI gameOverUI;
+    [SerializeField] private AreaManager areaManager;
 
     private TrailRenderer trailRenderer;
     private List<GameObject> trailColliders = new List<GameObject>();
@@ -32,6 +33,9 @@ public class PlayerControls :MonoBehaviour {
 
         if (gameOverUI == null) {
             gameOverUI = FindObjectOfType<GameOverUI>();
+        }
+        if (areaManager == null) {
+            areaManager = FindObjectOfType<AreaManager>();
         }
     }
 
@@ -146,6 +150,13 @@ public class PlayerControls :MonoBehaviour {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
             lastDirection = Vector3.zero;
+            if (trailColliders.Count > 0 && areaManager != null) {
+                List<Vector3> positions = new List<Vector3>();
+                foreach (var t in trailColliders) {
+                    positions.Add(t.transform.position);
+                }
+                areaManager.FillTrailArea(positions);
+            }
             KillTrailColliders();
         }
     }
@@ -155,6 +166,13 @@ public class PlayerControls :MonoBehaviour {
             onGround = true;
             lastDirection = Vector3.zero;
             if (trailColliders.Count > 0) {
+                if (areaManager != null) {
+                    List<Vector3> positions = new List<Vector3>();
+                    foreach (var t in trailColliders) {
+                        positions.Add(t.transform.position);
+                    }
+                    areaManager.FillTrailArea(positions);
+                }
                 KillTrailColliders();
             }
         }
