@@ -57,11 +57,17 @@ public class AreaManager : MonoBehaviour
             return;
 
         bool[,] temp = (bool[,])groundGrid.Clone();
-        foreach (var p in pathPoints)
+        // mark all cells along the trail path
+        Vector2Int start = WorldToGrid(pathPoints[0]);
+        Vector2Int prev = start;
+        temp[prev.x, prev.y] = true;
+        for (int i = 1; i < pathPoints.Count; i++)
         {
-            Vector2Int g = WorldToGrid(p);
-            temp[g.x, g.y] = true;
+            Vector2Int curr = WorldToGrid(pathPoints[i]);
+            MarkLine(temp, prev, curr);
+            prev = curr;
         }
+        MarkLine(temp, prev, start);
 
         bool[,] visited = new bool[gridSize, gridSize];
         Queue<Vector2Int> q = new Queue<Vector2Int>();
@@ -103,6 +109,17 @@ public class AreaManager : MonoBehaviour
                 }
             }
         }
+
+        // mark the trail itself as ground
+        prev = start;
+        groundGrid[prev.x, prev.y] = true;
+        for (int i = 1; i < pathPoints.Count; i++)
+        {
+            Vector2Int curr = WorldToGrid(pathPoints[i]);
+            MarkLine(groundGrid, prev, curr);
+            prev = curr;
+        }
+        MarkLine(groundGrid, prev, start);
     }
 
     private void CreateGroundCell(int gx, int gy)
@@ -112,6 +129,21 @@ public class AreaManager : MonoBehaviour
         cell.transform.localScale = new Vector3(cellSize, 1f, cellSize);
         cell.transform.position = new Vector3((gx + 0.5f) * cellSize - half, 0.5f, (gy + 0.5f) * cellSize - half);
         cell.tag = "Ground";
+    }
+
+    private void MarkLine(bool[,] grid, Vector2Int a, Vector2Int b)
+    {
+        int x = a.x;
+        int y = a.y;
+        grid[x, y] = true;
+        while (x != b.x || y != b.y)
+        {
+            if (x < b.x) x++;
+            else if (x > b.x) x--;
+            if (y < b.y) y++;
+            else if (y > b.y) y--;
+            grid[x, y] = true;
+        }
     }
 }
 

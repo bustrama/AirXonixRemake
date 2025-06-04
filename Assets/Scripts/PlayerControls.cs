@@ -149,7 +149,8 @@ public class PlayerControls :MonoBehaviour {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
             lastDirection = Vector3.zero;
-            if (trailPoints.Count > 0 && areaManager != null) {
+            trailPoints.Add(transform.position);
+            if (trailPoints.Count > 1 && areaManager != null) {
                 Enemy[] enemies = FindObjectsOfType<Enemy>();
                 List<Transform> enemyTransforms = new List<Transform>();
                 foreach (var e in enemies) {
@@ -178,6 +179,7 @@ public class PlayerControls :MonoBehaviour {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = false;
             trailPoints.Clear();
+            trailPoints.Add(transform.position);
             // CreateTrailCollider();
         }
     }
