@@ -12,6 +12,9 @@ public class PlayerControls :MonoBehaviour {
     private List<GameObject> trailColliders = new List<GameObject>();
     private Vector3 lastColliderInitialPoint;
 
+    private AreaManager areaManager;
+    private List<Vector3> trailPoints = new List<Vector3>();
+
     private AudioSource explosionSound;
     private float horizontalInput;
     private float verticalInput;
@@ -28,6 +31,8 @@ public class PlayerControls :MonoBehaviour {
         trailRenderer = gameObject.GetComponent<TrailRenderer>();
 
         explosionSound = gameObject.GetComponent<AudioSource>();
+
+        areaManager = FindObjectOfType<AreaManager>();
     }
 
     // Update is called once per frame
@@ -44,6 +49,10 @@ public class PlayerControls :MonoBehaviour {
         if (onGround) {
             transform.Translate(Vector3.up * moveSpeed * Time.deltaTime * -verticalInput);
             transform.Translate(Vector3.right * moveSpeed * Time.deltaTime * horizontalInput);
+            if (areaManager != null)
+            {
+                areaManager.MarkGround(transform.position);
+            }
         } else {
             if (lastDirection != Vector3.up && lastDirection != Vector3.down && Mathf.Abs(verticalInput) > Mathf.Abs(horizontalInput)) {
                 float direction = verticalInput > 0 ? 1 : -1;
@@ -105,6 +114,7 @@ public class PlayerControls :MonoBehaviour {
         GameObject trailCollider = Instantiate(trailColliderPrefab, transform.position, trailColliderPrefab.transform.rotation);
         lastColliderInitialPoint = new Vector3(transform.position.x, transform.position.y, transform.position.z);
         trailColliders.Add(trailCollider);
+        trailPoints.Add(transform.position);
     }
 
     void KillTrailColliders() {
@@ -113,6 +123,7 @@ public class PlayerControls :MonoBehaviour {
             Destroy(trail.gameObject);
         }
         trailColliders = new List<GameObject>();
+        trailPoints = new List<Vector3>();
     }
 
     void GameOver() {
@@ -138,6 +149,14 @@ public class PlayerControls :MonoBehaviour {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = true;
             lastDirection = Vector3.zero;
+            if (trailPoints.Count > 0 && areaManager != null) {
+                Enemy[] enemies = FindObjectsOfType<Enemy>();
+                List<Transform> enemyTransforms = new List<Transform>();
+                foreach (var e in enemies) {
+                    enemyTransforms.Add(e.transform);
+                }
+                areaManager.CloseArea(new List<Vector3>(trailPoints), enemyTransforms);
+            }
             KillTrailColliders();
         }
     }
@@ -149,12 +168,16 @@ public class PlayerControls :MonoBehaviour {
             if (trailColliders.Count > 0) {
                 KillTrailColliders();
             }
+            if (areaManager != null) {
+                areaManager.MarkGround(transform.position);
+            }
         }
     }
 
     private void OnTriggerExit(Collider other) {
         if (other.gameObject.CompareTag("Ground")) {
             onGround = false;
+            trailPoints.Clear();
             // CreateTrailCollider();
         }
     }
