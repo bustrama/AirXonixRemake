@@ -12,6 +12,7 @@ public class PlayerControls :MonoBehaviour {
 
     private TrailRenderer trailRenderer;
     private List<GameObject> trailColliders = new List<GameObject>();
+    private List<Vector3> pathPoints = new List<Vector3>();
     private Vector3 lastColliderInitialPoint;
 
     private AudioSource explosionSound;
@@ -40,6 +41,7 @@ public class PlayerControls :MonoBehaviour {
         if (areaManager == null) {
             areaManager = FindObjectOfType<AreaManager>();
         }
+        pathPoints = new List<Vector3>();
     }
 
     // Update is called once per frame
@@ -117,6 +119,7 @@ public class PlayerControls :MonoBehaviour {
         GameObject trailCollider = Instantiate(trailColliderPrefab, transform.position, trailColliderPrefab.transform.rotation);
         lastColliderInitialPoint = new Vector3(transform.position.x, transform.position.y, transform.position.z);
         trailColliders.Add(trailCollider);
+        pathPoints.Add(transform.position);
     }
 
     void KillTrailColliders() {
@@ -125,6 +128,7 @@ public class PlayerControls :MonoBehaviour {
             Destroy(trail.gameObject);
         }
         trailColliders = new List<GameObject>();
+        pathPoints = new List<Vector3>();
     }
 
     void GameOver() {
@@ -154,11 +158,8 @@ public class PlayerControls :MonoBehaviour {
             onGround = true;
             lastDirection = Vector3.zero;
             if (trailColliders.Count > 0 && areaManager != null) {
-                List<Vector3> positions = new List<Vector3>();
-                foreach (var t in trailColliders) {
-                    positions.Add(t.transform.position);
-                }
-                areaManager.FillTrailArea(positions);
+                pathPoints.Add(transform.position);
+                areaManager.FillTrailArea(pathPoints);
             }
             KillTrailColliders();
         }
@@ -170,11 +171,8 @@ public class PlayerControls :MonoBehaviour {
             lastDirection = Vector3.zero;
             if (trailColliders.Count > 0) {
                 if (areaManager != null) {
-                    List<Vector3> positions = new List<Vector3>();
-                    foreach (var t in trailColliders) {
-                        positions.Add(t.transform.position);
-                    }
-                    areaManager.FillTrailArea(positions);
+                    pathPoints.Add(transform.position);
+                    areaManager.FillTrailArea(pathPoints);
                 }
                 KillTrailColliders();
             }

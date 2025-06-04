@@ -10,48 +10,66 @@ public class AreaManager : MonoBehaviour {
     void Start() {
         float arenaSize = transform.localScale.x;
         cellSize = (arenaSize * 10f) / gridSize;
+    }
 
-        // Create border ground tiles
-        for (int x = 0; x < gridSize; x++) {
-            for (int z = 0; z < gridSize; z++) {
-                if (x == 0 || z == 0 || x == gridSize - 1 || z == gridSize - 1) {
+    public Vector2Int WorldToGrid(Vector3 pos) {
+        Vector3 origin = transform.position - new Vector3(transform.localScale.x * 5f, 0f, transform.localScale.z * 5f)
+                         + new Vector3(cellSize / 2f, 0f, cellSize / 2f);
+        int gx = Mathf.Clamp(Mathf.RoundToInt((pos.x - origin.x) / cellSize), 0, gridSize - 1);
+        int gz = Mathf.Clamp(Mathf.RoundToInt((pos.z - origin.z) / cellSize), 0, gridSize - 1);
+        return new Vector2Int(gx, gz);
+    }
+
+    public Vector3 GridToWorld(Vector2Int index) {
+        Vector3 origin = transform.position - new Vector3(transform.localScale.x * 5f, 0f, transform.localScale.z * 5f)
+                         + new Vector3(cellSize / 2f, 0f, cellSize / 2f);
+        return new Vector3(origin.x + index.x * cellSize, 0.5f, origin.z + index.y * cellSize);
+    }
+
+    public void FillTrailArea(List<Vector3> pathPoints) {
+        if (pathPoints == null || pathPoints.Count < 3) return;
+
+        // convert to 2D polygon (x,z)
+        List<Vector2> polygon = new List<Vector2>();
+        foreach (var p in pathPoints) {
+            polygon.Add(new Vector2(p.x, p.z));
+        }
+
+        // compute bounding box in world coordinates
+        Vector2 minWorld = polygon[0];
+        Vector2 maxWorld = polygon[0];
+        foreach (var p in polygon) {
+            if (p.x < minWorld.x) minWorld.x = p.x;
+            if (p.y < minWorld.y) minWorld.y = p.y;
+            if (p.x > maxWorld.x) maxWorld.x = p.x;
+            if (p.y > maxWorld.y) maxWorld.y = p.y;
+        }
+
+        Vector2Int min = WorldToGrid(new Vector3(minWorld.x, 0, minWorld.y));
+        Vector2Int max = WorldToGrid(new Vector3(maxWorld.x, 0, maxWorld.y));
+
+        for (int x = min.x; x <= max.x; x++) {
+            for (int z = min.y; z <= max.y; z++) {
+                Vector3 worldPos = GridToWorld(new Vector2Int(x, z));
+                Vector2 p = new Vector2(worldPos.x, worldPos.z);
+                if (IsPointInPolygon(p, polygon)) {
                     CreateGroundTile(new Vector2Int(x, z));
                 }
             }
         }
     }
 
-    public Vector2Int WorldToGrid(Vector3 pos) {
-        float startX = -transform.localScale.x * 5f + cellSize / 2f;
-        float startZ = -transform.localScale.z * 5f + cellSize / 2f;
-        int gx = Mathf.Clamp(Mathf.RoundToInt((pos.x - startX) / cellSize), 0, gridSize - 1);
-        int gz = Mathf.Clamp(Mathf.RoundToInt((pos.z - startZ) / cellSize), 0, gridSize - 1);
-        return new Vector2Int(gx, gz);
-    }
-
-    public Vector3 GridToWorld(Vector2Int index) {
-        float startX = -transform.localScale.x * 5f + cellSize / 2f;
-        float startZ = -transform.localScale.z * 5f + cellSize / 2f;
-        return new Vector3(startX + index.x * cellSize, 0.5f, startZ + index.y * cellSize);
-    }
-
-    public void FillTrailArea(List<Vector3> positions) {
-        if (positions == null || positions.Count == 0) return;
-
-        Vector2Int min = WorldToGrid(positions[0]);
-        Vector2Int max = min;
-        foreach (var p in positions) {
-            Vector2Int g = WorldToGrid(p);
-            if (g.x < min.x) min.x = g.x;
-            if (g.y < min.y) min.y = g.y;
-            if (g.x > max.x) max.x = g.x;
-            if (g.y > max.y) max.y = g.y;
-        }
-        for (int x = min.x; x <= max.x; x++) {
-            for (int z = min.y; z <= max.y; z++) {
-                CreateGroundTile(new Vector2Int(x, z));
+    private bool IsPointInPolygon(Vector2 point, List<Vector2> polygon) {
+        bool inside = false;
+        for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++) {
+            Vector2 pi = polygon[i];
+            Vector2 pj = polygon[j];
+            if (((pi.y > point.y) != (pj.y > point.y)) &&
+                (point.x < (pj.x - pi.x) * (point.y - pi.y) / (pj.y - pi.y) + pi.x)) {
+                inside = !inside;
             }
         }
+        return inside;
     }
 
     private void CreateGroundTile(Vector2Int index) {
