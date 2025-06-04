@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
 
 public class GameOverUI : MonoBehaviour {
     private GameObject canvasObj;
@@ -13,10 +14,16 @@ public class GameOverUI : MonoBehaviour {
     void SetupUI() {
         // Canvas
         canvasObj = new GameObject("GameOverCanvas");
+        canvasObj.transform.SetParent(transform, false);
         var canvas = canvasObj.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvasObj.AddComponent<CanvasScaler>();
         canvasObj.AddComponent<GraphicRaycaster>();
+
+        // Ensure there is an EventSystem so the button receives clicks
+        if (FindObjectOfType<EventSystem>() == null) {
+            new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule));
+        }
 
         // Panel background
         var panelObj = new GameObject("Panel");
