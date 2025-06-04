@@ -1,12 +1,17 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager :MonoBehaviour {
     [SerializeField] private GameObject player;
-    [SerializeField] private int size;
+    [SerializeField] public int size = 5;
     private GameObject arena;
     private GameObject[] arenaBorders;
 
     void Start() {
+        var sceneName = SceneManager.GetActiveScene().name;
+        if (sceneName == "MainMenu" || sceneName == "LevelSelect") {
+            return;
+        }
         SetupArena();
         SetupBorders();
         SpawnPlayer();
@@ -52,5 +57,9 @@ public class GameManager :MonoBehaviour {
 
     void SpawnPlayer() {
         Instantiate(player, new Vector3(0, 1.5f, -5 * size + 1), player.transform.rotation);
+    }
+
+    public void SetSize(int newSize) {
+        size = newSize;
     }
 }

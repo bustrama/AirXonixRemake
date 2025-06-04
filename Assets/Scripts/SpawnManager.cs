@@ -13,6 +13,10 @@ public class SpawnManager :MonoBehaviour {
 
     // Start is called before the first frame update
     void Start() {
+        var sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
+        if (sceneName == "MainMenu" || sceneName == "LevelSelect") {
+            return;
+        }
         StartCoroutine(WaitForArena());
     }
 
