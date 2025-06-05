@@ -21,6 +21,15 @@ public class Enemy :MonoBehaviour {
     }
 
     private void OnTriggerEnter(Collider other) {
+        if (other.gameObject.CompareTag("PlayerTrail")) {
+            var player = FindObjectOfType<PlayerControls>();
+            if (player != null) {
+                Debug.Log("Game Over Enemy hit trail: " + other.gameObject.name);
+                player.GameOver();
+            }
+            return;
+        }
+
         if (other.gameObject.CompareTag("Ground")) {
             if (Mathf.Abs(transform.position.x) > Mathf.Abs(transform.position.z)) {
                 xDirection *= -1;

@@ -120,7 +120,7 @@ public class PlayerControls :MonoBehaviour {
         trailColliders = new List<GameObject>();
     }
 
-    void GameOver() {
+    public void GameOver() {
         gameOver = true;
         explosionSound.Play();
         explosionPrefab.Play();
