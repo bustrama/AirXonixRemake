@@ -1,132 +1,40 @@
-# Xonix Remake – Agents Overview (AGENTS.md)
+# AirXonixRemake – Agent Guidelines
 
-## 1. Summary
-Xonix is a territory-capture arcade game. The player steers a marker over a rectangular “sea” and, by drawing a closed path, converts the enclosed water into solid land.  
-A modern Unity remake hinges on four pillars:
+## Summary
+AirXonixRemake is a Unity 2021.3 project that reimagines the classic territory-capture arcade game "Xonix". The current prototype contains basic player movement, simple enemies and a minimal UI. The long term goal is to allow the player to claim areas of the arena by drawing closed loops while avoiding enemy contact.
 
-1. **Grid representation** of the play-field.  
-2. **Line tracing** that lays a temporary trail while the player is off-land.  
-3. **Area-fill algorithm** that decides which side of the finished path becomes new land.  
-4. **Enemy AI** that patrols water and punishes collisions with the path or player.  
+## Repository Layout
+- `Assets/Scripts` – C# MonoBehaviours that implement game logic.
+- `Assets/Scenes` – Unity scenes (`Main Menu.unity`, `My Game.unity`).
+- `Assets/Docs` – design PDF and reference images.
+- `Assets/Prefabs`, `Assets/Textures`, `Assets/Materials`, `Assets/Sounds` – art and audio assets.
+- `ProjectSettings` – Unity project settings (2021.3.22f1).
+- `Packages` – package manifest and lock file.
 
-The recommended fill routine is **dual flood-fill**: flood from each enemy position; any water *not* reached becomes land.  
-This avoids tricky polygon math and naturally handles concave shapes and multiple islands.
+## Existing Agents
+- **GameManager** – creates the arena, borders and spawns the player.
+- **PlayerControls** – handles 4‑way movement, places trail colliders and triggers `GameOver` on collisions.
+- **Enemy** – basic movement along axes and interaction with player trails.
+- **SpawnManager** – spawns waves of enemies once the arena exists.
+- **GameOverUI** – shows a restart screen when the player dies.
+- **MainMenu** – builds the start menu UI.
+- **Spin** – spins an assigned object for simple effects.
 
-Every core behaviour is wrapped in a small, single-purpose *agent* (MonoBehaviour).  
-This file documents those agents so that ChatGPT Codex (or any other LLM) can load the project with full context.
+## Development Notes
+- Keep one MonoBehaviour per C# file inside `Assets/Scripts`.
+- Use PascalCase for class and method names and camelCase for private fields.
+- Expose private inspector variables with `[SerializeField]` where needed.
+- Let the Unity editor generate `.meta` files for new assets.
 
----
+## Building and Testing
+- Open the project with Unity **2021.3.22f1** or newer.
+- There are no automated tests; verify behaviour by running the scenes in the Unity editor.
+- Ensure `Main Menu` and `My Game` continue to load correctly after changes.
 
-## 2. Game-World Model
+## Future Work
+- Implement grid-based territory capture and the dual flood‑fill algorithm described in the design docs.
+- Expand enemy AI and add level progression.
 
-| Concept            | Notes                                                        |
-|--------------------|--------------------------------------------------------------|
-| **CellType enum**  | `Water`, `Land`, `Trail`, `Enemy`                            |
-| **Playfield**      | `int width, height; CellType[,] grid;`                       |
-| **Player state**   | `bool isDrawing; List<Vector2Int> currentTrail;`             |
-| **Enemies**        | `List<EnemyAgent>`; each enemy stores its own path logic     |
-
-A grid keeps updates **O(1)** per cell and enables trivial flood-fills without real-time boolean mesh ops.
-
----
-
-## 3. Agent Catalogue
-
-### 3.1 GameManagerAgent
-* **Role:** Bootstraps the grid, tracks score/lives/level, dispatches global events (`GameOver`, `AreaCaptured`).
-* **Key API**
-
-    ```csharp
-    void Init(int w, int h, int enemyCount);
-    void OnTrailClosed(List<Vector2Int> loop);
-    ```
-
-### 3.2 PlayerAgent
-* 4-way movement on keyboard/controller.  
-* Lays `Trail` cells while `isDrawing`.  
-* Emits `TrailClosed` when head re-enters land.  
-* Dies on collision with an enemy or if an enemy touches an open trail.
-
-### 3.3 EnemyAgent
-* Moves continuously on water (land-only variants later).  
-* Simple random-turn or A* toward the player.  
-* Registers its grid position with **FloodFillAgent** each frame so the fill algorithm always knows enemy seeds.
-
-### 3.4 FloodFillAgent
-* **API**
-
-    ```csharp
-    void CaptureArea(List<Vector2Int> loop,
-                     IEnumerable<Vector2Int> enemySeeds);
-    ```
-
-* Performs dual flood-fill (see §4).  
-* Calculates captured percentage and notifies GameManagerAgent.
-
-### 3.5 UIAgent
-* Renders HUD: score, lives, captured-percent bar, level number.  
-* Shows Game-Over and Next-Level screens.
-
----
-
-## 4. Filling Area Algorithm – Dual Flood-Fill
-
-1. **Commit the player’s loop**  
-   * Convert `Trail` cells in `loop` to a temporary wall (`TempWall`).  
-   * Verify the loop is watertight (each consecutive pair shares an edge).  
-
-2. **Flood from every enemy**  
-   * Breadth-first search through water, starting at each enemy; mark visited cells `EnemyReachable`.  
-
-3. **Convert residual water**  
-   * Iterate the grid; any `Water` cell *not* marked becomes `Land`.  
-   * Convert `TempWall` → `Land` and `EnemyReachable` → `Water`.  
-
-4. **Update score** by the number of new land cells.
-
-### Why it works
-Flooding from enemy positions guarantees you never fill an area containing an active enemy, matching the classic rule set.  
-The technique is robust to concavities, islands, and multiple enemies.
-
-### Performance Tips
-* Use a `byte[,]` instead of an enum array to keep cache lines hot.  
-* Split the flood into 32 × 32 tiles and process a few per frame for huge maps.  
-* For enormous grids, port the flood code to Unity Job System + Burst; classic fields (≈ 200 × 200) run fine on the main thread.  
-* Scan-line polygon fill is faster for tiny loops but needs logic to choose “which side” to keep.
-
----
-
-## 5. Typical Agent Interaction
-
-    ```mermaid
-    sequenceDiagram
-        Player->>Player: Walks on Land
-        Player->>Player: Enters Water (isDrawing=true)
-        loop path progress
-            Player->>Grid: mark cell = Trail
-            Enemy->>Grid: move each frame
-            Enemy->>Player: collision?
-        end
-        Player->>Player: returns to Land (loop closed)
-        Player-->>GameManagerAgent: TrailClosed(loop)
-        GameManagerAgent-->>FloodFillAgent: CaptureArea(loop, enemySeeds)
-        FloodFillAgent-->>GameManagerAgent: percentCaptured
-        alt level complete
-            GameManagerAgent-->>Scene: load next level
-        end
-    ```
-
----
-
-## 6. Notes for Codex-Powered Workflows
-* Place **AGENTS.md** in the repo root so the LLM can load it as context.  
-* When you ask for code, mention the agent and method you’re touching: *“Update FloodFillAgent to use Unity Jobs.”*  
-* Because each agent has single responsibility, the model can open the correct file and stay within context limits.
-
----
-
-## 7. Further Reading (non-exhaustive)
-* Unity Forum threads on “Xonix” / “Qix” clones.  
-* Stack Exchange discussions on grid flood-fill vs mesh boolean approaches.  
-* Retro-computing blogs reverse-engineering original Qix hardware.  
-* Classic computer-graphics texts on scan-line polygon fill algorithms.
+## Using This Document with Codex
+- `AGENTS.md` resides at the repo root so AI tools can load it automatically.
+- When asking for code, mention the script and method you want changed: e.g. “Modify `SpawnManager.SpawnEnemyWave` to randomise enemy types.”
